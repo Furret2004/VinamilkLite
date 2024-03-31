@@ -1,0 +1,34 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Lora:ital,wght@0,400..700;1,400..700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'VNM Sans Display Bold';
+  src: url('/fonts/VNM Sans Display Bold.otf');
+}
+
+@font-face {
+  font-family: 'VNM Sans Display Regular';
+  src: url('/fonts/VNM Sans Display Regular.otf');
+}
+
+@font-face {
+  font-family: 'VNM Sans Std';
+  src: url('/fonts/VNM Sans Std.otf');
+}
+
+@layer base {
+  .container-sm {
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+}
+
+@layer components {
+}
+
+@layer utilities {
+}
