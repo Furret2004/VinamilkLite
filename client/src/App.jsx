@@ -21,14 +21,14 @@ function App() {
         <Route path="/about-us" element={<AboutPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/news" element={<NewsPage />} />
-        <Route path="/accout/login" element={<LoginPage />} />
+        <Route path="/account/login" element={<LoginPage />} />
         <Route path="/account/register" element={<RegisterPage />} />
         <Route path="/collections/all-products" element={<ProductsPage />} />
         <Route path="/collections/:slug" element={<CollectionPage />} />
         <Route path="/products/:slug" element={<ProductsPage />} />
         <Route path="/cart" element={<CartPage />} />
-        <Route path="/orders" element={<OrdersPage />} />
-        <Route path="/orders/:id" element={<OrderDetailPage />} />
+        <Route path="/account/orders" element={<OrdersPage />} />
+        <Route path="/account/orders/:id" element={<OrderDetailPage />} />
       </Routes>
     </BrowserRouter>
   );

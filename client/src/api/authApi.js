@@ -1,5 +1,9 @@
-// import axiosClient from './axiosClient';
+import axiosClient from './axiosClient';
 
-const authApi = {};
+const authApi = {
+  login(data) {
+    return axiosClient.post('/auth/login', data);
+  },
+};
 
 export default authApi;
