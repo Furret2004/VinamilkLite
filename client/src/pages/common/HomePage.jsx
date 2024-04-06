@@ -1,17 +1,8 @@
 import { MainLayout } from '../../components/layout';
 import HeroImage from '../../assets/images/hero-image.jpg';
 import { AlternatingStripes } from '../../components/common';
-import { useEffect } from 'react';
-import { userApi } from '../../api';
 
 function HomePage() {
-  useEffect(() => {
-    (async () => {
-      const data = await userApi.getAllUsers();
-      console.log(data);
-    })();
-  }, []);
-
   return (
     <MainLayout hasTransitionHeader>
       <section id="hero">

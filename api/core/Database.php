@@ -3,6 +3,7 @@
 namespace Core;
 
 use Exception;
+use finfo;
 
 class Database
 {
@@ -10,6 +11,7 @@ class Database
     private $sql = '';
     private $table = null;
     private $statement = null;
+    private $params = [];
 
     /**
      * Database constructor
@@ -25,20 +27,59 @@ class Database
      * @param   string      $table The name of the table to be used
      * @return  Database    The current Database instance
      */
-    public function table($table = '')
+    public function table(string $table)
     {
         $this->table = $table;
         return $this;
     }
 
     /**
-     * Prepare an INSERT SQL statement.
+     * Set the custom sql query.
      *
-     * @param   array       $fields The fields to be inserted
+     * @param   string      $sql The sql query
      * @return  Database    The current Database instance
      */
-    public function insert($fields = [])
+    public function sql(string $sql)
     {
+        if (empty($sql)) {
+            throw new Exception('SQL query cannot be empty!');
+        }
+
+        $this->sql = $sql;
+        return $this;
+    }
+
+    /**
+     * Set the params for custom sql to excute sql query.
+     *
+     * @param   array      $params
+     * @return  Database    The current Database instance
+     */
+    public function params(array $params)
+    {
+        if (empty($params)) {
+            throw new Exception('Params cannot be empty!');
+        }
+
+        $this->params = $params;
+        return $this;
+    }
+
+    /**
+     * Prepare an INSERT SQL statement.
+     *
+     * @param   array       $data data to be inserted
+     * @return  Database    The current Database instance
+     */
+    public function insert(array $data)
+    {
+        if (empty($data)) {
+            throw new Exception('The insert fields cannot be empty!');
+        }
+
+        $fields = array_keys($data);
+        $this->params = $data;
+
         $placeholders = implode(', ', array_fill(0, count($fields), '?'));
         $sql = 'INSERT INTO ' . $this->table . ' (' . implode(', ', $fields) . ') VALUES (' . $placeholders . ')';
         $this->sql = $sql;
@@ -50,11 +91,18 @@ class Database
     /**
      * Prepare an UPDATE SQL statement.
      *
-     * @param   array       $fields The fields to be updated
+     * @param   array       $data data to be updated
      * @return  Database    The current Database instance
      */
-    public function update($fields = [])
+    public function update(array $data)
     {
+        if (empty($data)) {
+            throw new Exception('The update fields cannot be empty!');
+        }
+
+        $fields = array_keys($data);
+        $this->params = $data;
+
         $totalFields = count($fields);
         $i = 1;
         $sql = 'UPDATE ' . $this->table . ' SET';
@@ -76,14 +124,89 @@ class Database
      * @param   array       $fields The fields to be used in the WHERE clause
      * @return  Database    The current Database instance
      */
-    public function where($fields = [])
+    public function where($params = [])
     {
-        $sql = ' WHERE';
-
-        foreach ($fields as $value) {
-            $sql .= ' ' . $value . ' = ?';
+        if (empty($params)) {
+            return $this;
         }
 
+        $fields = array_keys($params);
+        $sql = ' WHERE ';
+        $conditions = array_map(function ($field) use ($params) {
+            if (substr($field, -5) === '_like') {
+                $newField = substr($field, 0, -5);
+                $this->params[$newField] = '%' . $params[$field] . '%';
+                return $newField . ' LIKE ?';
+            } else if (substr($field, -3) === '_gt') {
+                $newField = substr($field, 0, -3);
+                $this->params[$newField] = $params[$field];
+                return $newField . ' > ?';
+            } else if (substr($field, -3) === '_lt') {
+                $newField = substr($field, 0, -3);
+                $this->params[$newField] = $params[$field];
+                return $newField . ' < ?';
+            } else if (substr($field, -4) === '_gte') {
+                $newField = substr($field, 0, -4);
+                $this->params[$newField] = $params[$field];
+                return $newField . ' >= ?';
+            } else if (substr($field, -4) === '_lte') {
+                $newField = substr($field, 0, -4);
+                $this->params[$newField] = $params[$field];
+                return $newField . ' <= ?';
+            } else if (substr($field, -3) === '_ne') {
+                $newField = substr($field, 0, -3);
+                $this->params[$newField] = $params[$field];
+                return $newField . ' <> ?';
+            } else {
+                $this->params[$field] = $params[$field];
+                return $field . ' = ?';
+            }
+        }, $fields);
+
+        $sql .= implode(' AND ', $conditions);
+        $this->sql .= $sql;
+
+        return $this;
+    }
+
+    /**
+     * Add a LIMIT clause to the SQL statement.
+     *
+     * @param   int         $offset
+     * @param   int         $limit
+     * @return  Database    The current Database instance
+     */
+    public function limit($offset = 0, $limit = 10)
+    {
+        $sql = ' LIMIT ' . $offset . ', ' . $limit;
+        $this->sql .= $sql;
+
+        return $this;
+    }
+
+    /**
+     * Add a ORDER clause to the SQL statement.
+     *
+     * @param   string[]    $fields 
+     * @return  Database    The current Database instance
+     */
+    public function orderBy($fields = [])
+    {
+        if (empty($fields)) {
+            return $this;
+        }
+
+        $sql = ' ORDER BY ';
+        $conditions = array_map(function ($field) {
+            if (strpos($field, '-') === 0) {
+                $field = ltrim($field, '-');
+                return $field . ' DESC';
+            } else {
+                return $field . ' ASC';
+            }
+        }, $fields);
+
+        $sql .= implode(', ', $conditions);
         $this->sql .= $sql;
 
         return $this;
@@ -97,7 +220,29 @@ class Database
      */
     public function select($fields = [])
     {
-        $sql = 'SELECT ' . implode(', ', $fields) . ' FROM ' . $this->table;
+        $sql = '';
+        if (empty($fields)) {
+            $sql = 'SELECT *  FROM ' . $this->table;
+        } else {
+            $sql = 'SELECT ' . implode(', ', $fields) . ' FROM ' . $this->table;
+        }
+
+        $this->sql = $sql;
+        $this->statement = 'select';
+
+        return $this;
+    }
+
+    /**
+     * Prepare a SELECT COUNT SQL statement.
+     *
+     * @param   string      $field to count or * to count all
+     * @param   string      $alias for key of result, default totalRows
+     * @return  Database    The current Database instance
+     */
+    public function count($field = '*', $alias = 'totalRows')
+    {
+        $sql = 'SELECT COUNT(' . $field . ') AS ' . $alias . ' FROM ' . $this->table;
         $this->sql = $sql;
         $this->statement = 'select';
 
@@ -121,10 +266,9 @@ class Database
     /**
      * Execute the prepared SQL statement.
      *
-     * @param   array   $data The data to be used in the SQL statement
      * @return  mixed   The result of the execution, either an array of results or a boolean indicating success or failure
      */
-    public function execute($data = [])
+    public function execute()
     {
         try {
             $stmt = $this->connection->prepare($this->sql);
@@ -133,15 +277,16 @@ class Database
                 return false;
             }
 
-            if (!empty($data)) {
+            if (!empty($this->params)) {
                 $types = '';
                 $params = [];
-
-                foreach ($data as $value) {
+                foreach ($this->params as $value) {
                     if (is_int($value)) {
                         $types .= 'i'; // integer
+                        $value = (int)$value;
                     } elseif (is_double($value)) {
                         $types .= 'd'; // double
+                        $value = (float)$value;
                     } elseif (is_string($value)) {
                         $types .= 's'; // string
                     } else {
@@ -171,6 +316,10 @@ class Database
             }
         } catch (Exception $error) {
             throw new Exception($error->getMessage() . '. SQL Query: ' . $this->sql . '.');
+        } finally {
+            $this->sql = '';
+            $this->table = '';
+            $this->params = [];
         }
     }
 
@@ -202,5 +351,17 @@ class Database
     public function rollbackTransaction()
     {
         $this->connection->rollback();
+    }
+
+    /**
+     * Close database connection.
+     *
+     * @return  void
+     */
+    public function closeConnection()
+    {
+        if ($this->connection) {
+            $this->connection->close();
+        }
     }
 }

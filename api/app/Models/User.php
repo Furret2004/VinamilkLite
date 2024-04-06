@@ -14,24 +14,10 @@ class User extends Model
     protected $tableName = 'users';
 
     /**
-     * The fields to insert data.
-     *
-     * @var array
-     */
-    protected $insertFields = ['id', 'first_name', 'last_name', 'email', 'password'];
-
-    /**
-     * The select fields.
+     * The selected fields.
      * 
      * @var array
      * 
      */
-    protected $selectFields = ['id', 'first_name', 'last_name', 'email', 'password'];
-
-    /**
-     * The fields to update data.
-     *
-     * @var array
-     */
-    protected $updateFields = ['first_name', 'last_name', 'email', 'password'];
+    protected $selectedFields = ['id', 'email', 'password', 'first_name', 'last_name', 'role'];
 }

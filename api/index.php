@@ -1,8 +1,4 @@
 <?php
-header('Access-Control-Allow-Origin: *');
-header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
-header("Access-Control-Allow-Headers: X-API-KEY, Origin, X-Requested-With, Content-Type, Accept, Access-Control-Request-Method,Access-Control-Request-Headers, Authorization");
-header('Content-Type: application/json');
 
 require_once './config.php';
 require_once VENDOR_PATH . 'autoload.php';
@@ -12,6 +8,18 @@ use Dotenv\Dotenv;
 
 $dotenv = Dotenv::createMutable(__DIR__);
 $dotenv->load();
+
+header('Access-Control-Allow-Origin: ' . $_ENV['CLIENT_URL']);
+header("Access-Control-Allow-Methods: HEAD, GET, POST, PUT, PATCH, DELETE, OPTIONS");
+header('Access-Control-Allow-Headers: X-API-KEY, Origin, X-Requested-With, Content-Type, Accept, Access-Control-Request-Method,Access-Control-Request-Headers, Authorization');
+header('Access-Control-Allow-Credentials: true');
+header('Content-Type: application/json');
+header('Access-Control-Max-Age: 600');
+$method = $_SERVER['REQUEST_METHOD'];
+if ($method == "OPTIONS") {
+    header("HTTP/1.1 200 OK");
+    die();
+}
 
 // Define app
 use Core\App;
@@ -40,6 +48,7 @@ use Core\Router;
 $router = new Router($request->getUri(), $request->getMethod());
 
 // Require routes
+require_once ROUTES_PATH . 'auth.route.php';
 require_once ROUTES_PATH . 'user.route.php';
 
 $router->dispatch();

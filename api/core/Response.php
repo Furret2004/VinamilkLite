@@ -7,16 +7,19 @@ class Response
     /**
      * Set status code if it is valid.
      * 
-     * @param   int     $statusCode
-     * @return  object  this response object.
+     * @param   int             $statusCode
+     * @param   bool            $hasMessage default: true
+     * @return  object|void     Response instance if hasMessage is true, void ortherwise.
      */
-    public function status($statusCode = 200)
+    public function status($statusCode = 200, $hasMessage = true)
     {
-        if ($this->isValid($statusCode)) {
-            http_response_code($statusCode);
-            return $this;
-        } else {
+        if (!$this->isValid($statusCode)) {
             exit('Invalid status code!');
+        }
+
+        http_response_code($statusCode);
+        if ($hasMessage) {
+            return $this;
         }
     }
 
@@ -35,7 +38,7 @@ class Response
      * Create JSON format for response content.
      * 
      * @param   int     $success 1 if successful, 0 otherwise
-     * @param   array   $data
+     * @param   mixed   $data
      * @param   string  $message
      * @return  string  response JSON
      */
@@ -46,5 +49,44 @@ class Response
             'message' => $message,
             'data' => $data,
         ]);
+    }
+
+    /**
+     * Set Cookie.
+     *
+     * @param   string  $key
+     * @param   string  $value
+     * @param   int     $expires
+     * @return  bool    true if overwritten, otherwise false.
+     */
+    public function setCookie(string $key, string $value, int $expires)
+    {
+        if ($key === '') {
+            return false;
+        }
+
+        if (isset($_COOKIE[$key])) {
+            setcookie($key, $value, [
+                'expires' => $expires,
+                'path' => '/',
+                'domain' => '',
+                'secure' => false,
+                'httponly' => true,
+                'samesite' => 'Lax'
+            ]);
+
+            return true;
+        }
+
+        setcookie($key, $value, [
+            'expires' => $expires,
+            'path' => '/',
+            'domain' => '',
+            'secure' => false,
+            'httponly' => true,
+            'samesite' => 'Lax'
+        ]);
+
+        return false;
     }
 }

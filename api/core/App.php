@@ -16,7 +16,7 @@ class App
 	protected $basePath;
 
 	/**
-	 * Create a new app instance.
+	 * App constructor.
 	 *
 	 * @param  string|null  $basePath
 	 */

@@ -7,24 +7,24 @@ $userController = new UserController();
 
 $router->post('/users', function () use ($userController) {
     echo $userController->create();
-});
+})->addMiddleware(new AuthMiddleware(true));
 
 $router->patch('/users/:id', function ($params) use ($userController) {
     echo $userController->update($params['id']);
-});
+})->addMiddleware(new AuthMiddleware(true));
 
 $router->put('/users/:id', function ($params) use ($userController) {
     echo $userController->updateAll($params['id']);
-});
+})->addMiddleware(new AuthMiddleware(true));
 
 $router->get('/users', function () use ($userController) {
-    echo $userController->getAll();
-});
+    echo $userController->getUsers();
+})->addMiddleware(new AuthMiddleware(true));
 
 $router->get('/users/:id', function ($params) use ($userController) {
     echo $userController->getById($params['id']);
-});
+})->addMiddleware(new AuthMiddleware(true));
 
 $router->delete('/users/:id', function ($params) use ($userController) {
     echo $userController->delete($params['id']);
-})->addMiddleware(new AuthMiddleware());
+})->addMiddleware(new AuthMiddleware(true));

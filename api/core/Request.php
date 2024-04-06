@@ -2,35 +2,37 @@
 
 namespace Core;
 
+use Exception;
+
 class Request
 {
     /**
      * Get params from request. 
      * 
-     * @return  array
+     * @return  mixed
      */
     public function params($key = '')
     {
         if ($key != '') {
-            return isset($_GET[$key]) ? $this->clean($_GET[$key]) : null;
+            return isset($_GET[$key]) ? $this->sanitize($_GET[$key]) : null;
         }
 
-        return  $this->clean($_GET);
+        return  $this->sanitize($_GET);
     }
 
     /**
      * Get body from request. 
      * 
-     * @return  array
+     * @return  mixed
      */
     public function body($key = '')
     {
         $data = json_decode(file_get_contents('php://input'), true);
         if ($key != '') {
-            return isset($data[$key]) ? $this->clean($data[$key]) : null;
+            return isset($data[$key]) ? $this->sanitize($data[$key]) : [];
         }
 
-        return $this->clean($data);
+        return $this->sanitize($data);
     }
 
     /**
@@ -42,8 +44,8 @@ class Request
     public function server($key = '')
     {
         return isset($_SERVER[strtoupper($key)])
-            ? $this->clean($_SERVER[strtoupper($key)])
-            : $this->clean($_SERVER);
+            ? $this->sanitize($_SERVER[strtoupper($key)])
+            : $this->sanitize($_SERVER);
     }
 
     /**
@@ -76,20 +78,69 @@ class Request
         return $this->server('REQUEST_URI');
     }
 
+
     /**
-     * The clean function is used to sanitize input data.
+     * Get header.
+     *
+     * @param   string  $key
+     * @return  mixed
+     */
+    public function getHeader($key = '')
+    {
+        $headers = getallheaders();
+        if ($key != '') {
+            return isset($headers[$key]) ? $this->sanitize($headers[$key]) : null;
+        }
+
+        return $this->sanitize($headers);
+    }
+
+    /**
+     * Get Cookie.
+     *
+     * @param   string  $key
+     * @return  mixed
+     */
+    public function getCookie($key = '')
+    {
+        if ($key != '') {
+            return isset($_COOKIE[$key]) ? $this->sanitize($_COOKIE[$key]) : null;
+        }
+
+        return  $this->sanitize($_COOKIE);
+    }
+
+    /**
+     * Validate request data.
+     *
+     * @param   array       $requestData
+     * @return  bool|string true if all rules are passed, a error message otherwise
+     */
+    public function validate(array $requestData, array $rules)
+    {
+        if (empty($rules)) {
+            throw new Exception('Cannot validate with empty rules!');
+        }
+        // todo
+        return true;
+    }
+
+    /**
+     * The function is used to sanitize input data.
      *
      * @param   mixed   $data
      * @return  mixed
      */
-    private function clean($data)
+    private function sanitize($data)
     {
         if (is_array($data)) {
             foreach ($data as $key => $value) {
                 unset($data[$key]);
-                $data[$this->clean($key)] = $this->clean($value);
+                $data[$this->sanitize($key)] = $this->sanitize($value);
             }
         } else {
+            $data = trim($data);
+            $data = stripslashes($data);
             $data = htmlspecialchars($data, ENT_COMPAT, 'UTF-8');
         }
 

@@ -1,14 +1,24 @@
 <?php
 
+use Firebase\JWT\JWT;
+use Firebase\JWT\ExpiredException;
+use Firebase\JWT\SignatureInvalidException;
+use Firebase\JWT\BeforeValidException;
+use Firebase\JWT\Key;
+
 /**
- * The clean function is used to sanitize input data.
+ * The function is used to sanitize input data.
  *
  * @param   string  $data The input data to be sanitized.
  * @return  string  The sanitized data.
  */
-function clean($data)
+function sanitize($data)
 {
-    return trim(htmlspecialchars($data, ENT_COMPAT, 'UTF-8'));
+    $data = trim($data);
+    $data = stripslashes($data);
+    $data = htmlspecialchars($data, ENT_COMPAT, 'UTF-8');
+
+    return $data;
 }
 
 /**
@@ -20,4 +30,43 @@ function clean($data)
 function cleanUrl($url)
 {
     return str_replace(['%20', ' '], '-', $url);
+}
+
+/**
+ * Generate JSON web token.
+ *
+ * @param   string  $userId
+ * @param   string  $secretKey
+ * @param   int     $expireIn
+ * @return  string  token
+ */
+function generateJwtToken($userId, $secretKey, $expireIn)
+{
+    $issuedAt = time();
+    $expiredAt = $issuedAt + $expireIn;
+
+    $payload = array(
+        'iss' => 'VinamilkLite',
+        'iat' => $issuedAt,
+        'nbf' => $issuedAt,
+        'exp' => $expiredAt,
+        'userId' => $userId
+    );
+
+    return JWT::encode($payload, $secretKey, 'HS256');
+}
+
+function validateJwtToken($jwt, $secretKey)
+{
+    try {
+        return (array)JWT::decode($jwt, new Key($secretKey, 'HS256'));
+    } catch (ExpiredException $e) {
+        throw new Exception('Token expired');
+    } catch (SignatureInvalidException $e) {
+        throw new Exception('Invalid token signature');
+    } catch (BeforeValidException $e) {
+        throw new Exception('Token not valid yet');
+    } catch (Exception $e) {
+        throw new Exception('Invalid token');
+    }
 }
