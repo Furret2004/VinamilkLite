@@ -21,26 +21,12 @@ class Model
     protected $tableName = '';
 
     /**
-     * The fields to insert data.
-     *
-     * @var array
-     */
-    protected $insertFields = [];
-
-    /**
-     * The select fields.
+     * The selected fields.
      * 
      * @var array
      * 
      */
-    protected $selectFields = [];
-
-    /**
-     * The fields to update data.
-     *
-     * @var array
-     */
-    protected $updateFields = [];
+    protected $selectedFields = [];
 
     /**
      * Model constructor.
@@ -51,26 +37,85 @@ class Model
     }
 
     /**
-     * Get all records from the table.
-     *
-     * @return  mixed    Array of results if successful, false otherwise
+     * Model destructor.
      */
-    public function getAll()
+    public function __destruct()
     {
-        return $this->db->table($this->tableName)
-            ->select($this->selectFields)->execute();
+        $this->db->closeConnection();
+    }
+
+    /**
+     * Get records from the table.
+     *
+     * @param   array   $params   
+     * @return  mixed   Array of results if successful, false otherwise
+     */
+    public function getMultiple($params = [])
+    {
+        if (empty($params)) {
+            $rows = $this->db->table($this->tableName)
+                ->select($this->selectedFields)->execute();
+
+            return ['rows' => $rows];
+        }
+
+        $hasPagination = false;
+        $offset = 0;
+        $limit = 10;
+        if (isset($params['_page'])) {
+            $hasPagination = true;
+            $page = (int)$params['_page'];
+            unset($params['_page']);
+            if (isset($params['_per_page'])) {
+                $limit = (int)$params['_per_page'];
+                unset($params['_per_page']);
+            }
+            $offset = ($page - 1) * $limit;
+        }
+
+        $sortFields = [];
+        if (isset($params['_sort'])) {
+            $sortFields = explode(',', $params['_sort']);
+            unset($params['_sort']);
+        }
+
+        if ($hasPagination) {
+            $rows = $this->db->table($this->tableName)
+                ->select($this->selectedFields)->where($params)
+                ->orderBy($sortFields)->limit($offset, $limit)->execute();
+
+            $countRows = $this->db->table($this->tableName)
+                ->count()->where($params)->limit($offset, $limit)->execute();
+            $totalRows = $countRows[0]['totalRows'];
+
+            return [
+                'rows' => $rows,
+                'pagination' => [
+                    'page' => $page,
+                    'perPage' => $limit,
+                    'totalRows' => $totalRows,
+                    'totalPages' => ceil($totalRows / $limit)
+                ]
+            ];
+        } else {
+            $rows = $this->db->table($this->tableName)
+                ->select($this->selectedFields)->where($params)
+                ->orderBy($sortFields)->execute();
+
+            return ['rows' => $rows];
+        }
     }
 
     /**
      * Get a record by its ID from the table.
      *
-     * @param   int     $id The ID of the record to select
+     * @param   string  $id The ID of the record to select
      * @return  mixed   Array of results if successful, false otherwise
      */
     public function getById($id)
     {
         return $this->db->table($this->tableName)
-            ->select($this->selectFields)->where(['id'])->execute(['id' => $id]);
+            ->select($this->selectedFields)->where(['id' => $id])->execute()[0];
     }
 
     /**
@@ -81,18 +126,8 @@ class Model
      */
     public function create(array $data)
     {
-        $insertData = [];
-
-        foreach ($this->insertFields as $field) {
-            if (array_key_exists($field, $data)) {
-                $insertData[] = $data[$field];
-            } else {
-                $insertData[] = null;
-            }
-        }
-
         return $this->db->table($this->tableName)
-            ->insert($this->insertFields)->execute($insertData);
+            ->insert($data)->execute();
     }
 
     /**
@@ -105,8 +140,7 @@ class Model
     public function update(array $data, string $id)
     {
         return $this->db->table($this->tableName)
-            ->update(array_keys($data))->where(['id'])
-            ->execute($data + ['id' => $id]);
+            ->update($data)->where(['id' => $id])->execute();
     }
 
     /**
@@ -118,18 +152,8 @@ class Model
      */
     public function updateAll(array $data, string $id)
     {
-        $updateData = [];
-        foreach ($this->updateFields as $field) {
-            if (array_key_exists($field, $data)) {
-                $updateData[] = $data[$field];
-            } else {
-                $updateData[] = null;
-            }
-        }
-
         return $this->db->table($this->tableName)
-            ->update($this->updateFields)->where(['id'])
-            ->execute($updateData + ['id' => $id]);
+            ->update($data)->where(['id' => $id])->execute();
     }
 
     /**
@@ -140,36 +164,7 @@ class Model
      */
     public function delete($id)
     {
-        return $this->db->table($this->tableName)->delete()->where(['id'])->execute(['id' => $id]);
-    }
-
-    /**
-     * Get insert fields
-     * 
-     * @return  array
-     */
-    public function getInsertFields()
-    {
-        return $this->insertFields;
-    }
-
-    /**
-     * Get select fields
-     * 
-     * @return  array
-     */
-    public function getSelectFields()
-    {
-        return $this->selectFields;
-    }
-
-    /**
-     * Get update fields
-     * 
-     * @return  array
-     */
-    public function getUpdateFields()
-    {
-        return $this->updateFields;
+        return $this->db->table($this->tableName)
+            ->delete()->where(['id' => $id])->execute();
     }
 }

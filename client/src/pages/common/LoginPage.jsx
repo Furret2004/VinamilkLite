@@ -1,10 +1,14 @@
-import { useState } from 'react';
-import { authApi } from '../../api';
-import Cookies from 'js-cookie';
+import { useState, useEffect } from 'react';
+import { useAuth } from '../../hooks';
+import { Loading } from '../../components/common';
+import { useNavigate } from 'react-router-dom';
 
 function LoginPage() {
+  const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const { profile, login, refresh } = useAuth();
+  const navigate = useNavigate();
 
   const handleEmailChange = (event) => {
     setEmail(event.target.value);
@@ -14,24 +18,38 @@ function LoginPage() {
     setPassword(event.target.value);
   };
 
-  const handleSubmit = async (event) => {
+  const handleLogin = async (event) => {
     event.preventDefault();
 
     try {
-      const { data } = await authApi.login({ email, password });
-      Cookies.set('access_token', data.accessToken, {
-        httpOnly: true,
-        sameSite: 'lax',
-        expires: new Date(data.accessExpiredAt),
-      });
+      await login({ email, password });
     } catch (error) {
       console.log(error);
     }
   };
 
+  useEffect(() => {
+    if (profile) {
+      navigate('/', { replace: true });
+      return;
+    }
+
+    (async () => {
+      try {
+        await refresh();
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [profile]);
+
+  if (loading) return <Loading fullScreen />;
+
   return (
     <div>
-      <form action="">
+      <form className="flex flex-col" action="">
         <input onChange={handleEmailChange} value={email} type="email" placeholder="email" />
         <input
           onChange={handlePasswordChange}
@@ -39,7 +57,7 @@ function LoginPage() {
           type="password"
           placeholder="password"
         />
-        <button onClick={handleSubmit} type="submit">
+        <button onClick={handleLogin} type="submit">
           Đăng nhập
         </button>
       </form>

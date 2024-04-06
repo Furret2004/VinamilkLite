@@ -10,7 +10,7 @@ class Controller
     public $response;
 
     /**
-     * Controller constructor
+     * Controller constructor.
      * 
      * @return void
      */
@@ -21,7 +21,7 @@ class Controller
     }
 
     /**
-     * Get model
+     * Create a model.
      * 
      * @return  object  model instance    
      */
