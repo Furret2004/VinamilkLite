@@ -48,19 +48,37 @@ function LoginPage() {
   if (loading) return <Loading fullScreen />;
 
   return (
-    <div>
-      <form className="flex flex-col" action="">
-        <input onChange={handleEmailChange} value={email} type="email" placeholder="email" />
-        <input
-          onChange={handlePasswordChange}
-          value={password}
-          type="password"
-          placeholder="password"
-        />
-        <button onClick={handleLogin} type="submit">
-          Đăng nhập
-        </button>
-      </form>
+    <div className='flex items-center justify-center min-h-screen flex-col'>
+      <div className='w-1/4 md:w-32 lg:w-48 p-12 m-2 justify-self-auto border min-h-3/4 border-blue-400 border-solid rounded-lg'>
+        <p className='italic text-blue-400'>Tài khoản Vinamilk</p>
+        <p className='text-xl font-bold text-blue-400'>Đăng nhập vào tài khoản thành viên</p><br></br>
+        <form className="flex flex-col" action="">
+        <p className='italic text-blue-400'>Email</p>
+          <input 
+            className='border border-blue-400 border-solid rounded-lg'
+            onChange={handleEmailChange} 
+            value={email} 
+            type="email" 
+            placeholder="email"
+            required pattern="[A-Za-z0-9]+@[A-Za-z0-9]+"/><br></br>
+          <p className='italic text-blue-400'>Mật khẩu</p>
+          <input
+            className='border border-blue-400 border-solid rounded-lg'
+            onChange={handlePasswordChange}
+            value={password}
+            type="password"
+            placeholder="password"
+          />
+          <br></br>
+          <button onClick={handleLogin} type="submit" className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
+            Đăng nhập
+          </button>
+        </form>
+      </div><br></br>
+      <div className='min-w-screen'>
+      Bạn chưa có tài khoản? <a className='italic underline' href='register'>Đăng ký</a>
+      </div>
+      
     </div>
   );
 }
